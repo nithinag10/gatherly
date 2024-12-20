@@ -1,1 +1,7 @@
 /venv
+google-credentials.json
+deploy_to_cloud_run.sh
+
+
+.env
+.env.*

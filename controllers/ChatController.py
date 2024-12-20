@@ -5,6 +5,16 @@ from repositories.UserRepository import UserRepository
 import uuid
 from datetime import datetime
 from entities.Message import Message
+from services.SummaryService import SummaryService
+import logging
+import traceback
+
+# Initialize logger
+logging.basicConfig(
+    level=logging.DEBUG,
+    format='[%(asctime)s] %(levelname)s in %(module)s: %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 # Create Blueprint for chat routes
 chat_controller = Blueprint('chat_controller', __name__)
@@ -14,28 +24,41 @@ chat_repo = ChatRepository()
 user_repo = UserRepository()
 chat_service = ChatService(chat_repo, user_repo)
 
+# Initialize SummaryService
+summary_service = SummaryService(chat_repo)
+
 @chat_controller.route('/health', methods=['GET'])
 def health_check():
     """Health check endpoint"""
     return jsonify({"status": "healthy"}), 200
 
-@chat_controller.route('/chats', methods=['POST'])
+
+
+@chat_controller.route('/create', methods=['POST'])
 def create_chat():
     """Create a new chat"""
     try:
+        logger.debug("Request received to create a chat")
         data = request.get_json()
         
         if not data or 'creator_id' not in data:
+            logger.warning("Request missing required field: creator_id")
             return jsonify({
                 "error": "Missing required fields: creator_id"
             }), 400
 
+        logger.debug("Request data: %s", data)
         chat_id = str(uuid.uuid4())
+        logger.debug("Generated chat ID: %s", chat_id)
+        
+        # Simulate calling chat service (add logs inside chat_service too if needed)
         chat, message = chat_service.create_chat(data['creator_id'], chat_id)
         
         if not chat:
+            logger.error("Failed to create chat: %s", message)
             return jsonify({"error": message}), 400
             
+        logger.info("Chat created successfully: %s", chat.id)
         return jsonify({
             "message": message,
             "chat": {
@@ -46,9 +69,11 @@ def create_chat():
         }), 201
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error("An error occurred while creating a chat: %s", str(e))
+        print("Stack trace: %s", traceback.format_exc())
+        return jsonify({"error": "An unexpected error occurred"}), 500
 
-@chat_controller.route('/chats/<chat_id>/join', methods=['POST'])
+@chat_controller.route('/<chat_id>/join', methods=['POST'])
 def join_chat(chat_id):
     """Join an existing chat"""
     try:
@@ -69,7 +94,7 @@ def join_chat(chat_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@chat_controller.route('/chats/<chat_id>/leave', methods=['POST'])
+@chat_controller.route('/<chat_id>/leave', methods=['POST'])
 def leave_chat(chat_id):
     """Leave a chat"""
     try:
@@ -90,7 +115,7 @@ def leave_chat(chat_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@chat_controller.route('/chats/<chat_id>', methods=['GET'])
+@chat_controller.route('/<chat_id>', methods=['GET'])
 def get_chat(chat_id):
     """Get chat details"""
     try:
@@ -116,7 +141,7 @@ def get_chat(chat_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@chat_controller.route('/chats/<chat_id>', methods=['DELETE'])
+@chat_controller.route('/<chat_id>', methods=['DELETE'])
 def delete_chat(chat_id):
     """Delete a chat"""
     try:
@@ -137,7 +162,7 @@ def delete_chat(chat_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@chat_controller.route('/chats/<chat_id>/messages', methods=['GET'])
+@chat_controller.route('/<chat_id>/messages', methods=['GET'])
 def get_messages(chat_id):
     """Get recent messages from a chat"""
     try:
@@ -167,7 +192,7 @@ def get_messages(chat_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@chat_controller.route('/chats/<chat_id>/messages', methods=['POST'])
+@chat_controller.route('/<chat_id>/messages', methods=['POST'])
 def send_message(chat_id):
     """Send a message in a chat"""
     try:
@@ -208,6 +233,23 @@ def send_message(chat_id):
                 "timestamp": message.timestamp.isoformat()
             }
         }), 201
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500 
+
+@chat_controller.route('/<chat_id>/summary', methods=['GET'])
+def get_chat_summary(chat_id):
+    """Get a summary of the chat"""
+    try:
+        summary, message = summary_service.get_chat_summary(chat_id)
+        
+        if not summary:
+            return jsonify({"error": message}), 404
+            
+        return jsonify({
+            "message": message,
+            "summary": summary
+        }), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500 

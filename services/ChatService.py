@@ -18,13 +18,15 @@ class ChatService:
         self.chat_repository = chat_repository
         self.user_repository = user_repository
 
-    def create_chat(self, creator_id: str, chat_id: str) -> Tuple[Optional[Chat], str]:
+    def create_chat(self, creator_id: str, chat_id: str, chat_name: str, agenda: str) -> Tuple[Optional[Chat], str]:
         """
         Create a new chat with the given creator as admin
         
         Args:
             creator_id (str): ID of the user creating the chat
             chat_id (str): Desired chat ID
+            chat_name (str): Name of the chat
+            agenda (str): Agenda of the chat
             
         Returns:
             Tuple[Optional[Chat], str]: (Chat object or None, success/error message)
@@ -42,11 +44,14 @@ class ChatService:
         new_chat = Chat(
             id=chat_id,
             admin_id=creator_id,
-            participants=[creator_id]
+            participants=[creator_id],
+            chat_name=chat_name,
+            agenda=agenda
         )
         
         saved_chat = self.chat_repository.save_chat(new_chat)
         return saved_chat, "Chat created successfully"
+
 
     def join_chat(self, user_id: str, chat_id: str) -> Tuple[bool, str]:
         """

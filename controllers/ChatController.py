@@ -41,10 +41,10 @@ def create_chat():
         logger.debug("Request received to create a chat")
         data = request.get_json()
         
-        if not data or 'creator_id' not in data:
-            logger.warning("Request missing required field: creator_id")
+        if not data or 'creator_id' not in data or 'chat_name' not in data or 'agenda' not in data:
+            logger.warning("Request missing required fields: creator_id, chat_name, agenda")
             return jsonify({
-                "error": "Missing required fields: creator_id"
+                "error": "Missing required fields: creator_id, chat_name, agenda"
             }), 400
 
         logger.debug("Request data: %s", data)
@@ -52,7 +52,12 @@ def create_chat():
         logger.debug("Generated chat ID: %s", chat_id)
         
         # Simulate calling chat service (add logs inside chat_service too if needed)
-        chat, message = chat_service.create_chat(data['creator_id'], chat_id)
+        chat, message = chat_service.create_chat(
+            creator_id=data['creator_id'],
+            chat_id=chat_id,
+            chat_name=data['chat_name'],
+            agenda=data['agenda']
+        )
         
         if not chat:
             logger.error("Failed to create chat: %s", message)
@@ -64,7 +69,9 @@ def create_chat():
             "chat": {
                 "id": chat.id,
                 "admin_id": chat.admin_id,
-                "participants": chat.participants
+                "participants": chat.participants,
+                "chat_name": chat.chat_name,
+                "agenda": chat.agenda
             }
         }), 201
 
@@ -72,6 +79,7 @@ def create_chat():
         logger.error("An error occurred while creating a chat: %s", str(e))
         print("Stack trace: %s", traceback.format_exc())
         return jsonify({"error": "An unexpected error occurred"}), 500
+
 
 @chat_controller.route('/<chat_id>/join', methods=['POST'])
 def join_chat(chat_id):

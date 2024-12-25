@@ -51,10 +51,18 @@ class ChatRepository:
         try:
             with pool.begin() as conn:  # begin() starts a transaction
                 conn.execute(
-                    text("""INSERT INTO chats (id, admin_id) 
-                            VALUES (:id, :admin_id)
-                            ON DUPLICATE KEY UPDATE admin_id = :admin_id"""),
-                    {"id": chat.id, "admin_id": chat.admin_id}
+                    text("""INSERT INTO chats (id, admin_id, chat_name, agenda) 
+                            VALUES (:id, :admin_id, :chat_name, :agenda)
+                            ON DUPLICATE KEY UPDATE 
+                                admin_id = :admin_id,
+                                chat_name = :chat_name,
+                                agenda = :agenda"""),
+                    {
+                        "id": chat.id,
+                        "admin_id": chat.admin_id,
+                        "chat_name": chat.chat_name,
+                        "agenda": chat.agenda
+                    }
                 )
 
                 conn.execute(
@@ -72,6 +80,7 @@ class ChatRepository:
         except Exception:
             # Transaction will rollback automatically on exception
             raise
+
 
     def add_participant(self, chat_id: str, participant_id: str) -> bool:
         """Add a participant to a chat"""

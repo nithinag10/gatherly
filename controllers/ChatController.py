@@ -260,4 +260,33 @@ def get_chat_summary(chat_id):
         }), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500 
+        return jsonify({"error": str(e)}), 500
+
+@chat_controller.route('/<chat_id>/validate', methods=['GET'])
+def validate_chat_context(chat_id):
+    """Validate if chat messages align with the agenda"""
+    try:
+        validation_result, message = summary_service.validate_chat_context(chat_id)
+        
+        if not validation_result:
+            return jsonify({
+                "error": message,
+                "chat_id": chat_id
+            }), 404
+
+        return jsonify({
+            "chat_id": chat_id,
+            "is_on_topic": validation_result["is_on_topic"],
+            "validation_details": validation_result["validation_details"],
+            "chat_name": validation_result["chat_name"],
+            "message_count": validation_result["message_count"],
+            "agenda": validation_result["agenda"],
+            "message": message
+        }), 200
+
+    except Exception as e:
+        logger.error(f"Error in validate_chat_context: {str(e)}")
+        return jsonify({
+            "error": "Internal server error",
+            "details": str(e)
+        }), 500

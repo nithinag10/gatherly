@@ -5,6 +5,7 @@ from langchain_core.prompts import PromptTemplate
 import os
 from dotenv import load_dotenv
 import traceback
+import logging
 
 class SummaryService:
     def __init__(self, chat_repository: ChatRepository):
@@ -47,10 +48,6 @@ class SummaryService:
                 for msg in chat.messages
             ])
 
-            print("printing messaghes")
-            print(messages_text)
-            print(type(messages_text))
-
             # Create prompt template
             prompt = PromptTemplate(
                 input_variables=["messages"],
@@ -71,8 +68,6 @@ class SummaryService:
             # Generate summary using LLM
             formatted_prompt = prompt.format(messages=messages_text)
 
-            print("Formated pronpt")
-            print(formatted_prompt)
             summary = self.llm.invoke(formatted_prompt)
 
             return {
@@ -86,40 +81,59 @@ class SummaryService:
             traceback.print_tb(e.__traceback__)
             return None, f"Error generating summary: {str(e)}"
 
-    def validate_chat_context(self, chat_id: str) -> Tuple[bool, str]:
-        """
-        Validate if chat messages align with the agenda
-        """
+    def validate_chat_context(self, chat_id: str) -> Tuple[Optional[Dict], str]:
         try:
-            # Get chat details
             chat = self.chat_repository.get_chat_by_id(chat_id)
             if not chat:
-                return False, "Chat not found"
+                return None, "Chat not found"
 
-            # Get all messages
-            messages = [msg.content for msg in chat.messages]
-            if not messages:
-                return True, "No messages to validate"
-            
-            prompt = f"""
-            Chat Agenda: {chat.agenda}
-            
-            Recent messages in chat:
-            {' '.join(messages[-25:])}  # Only analyze last 25 messages
-            
-            Question: Are these messages staying within the context of the chat agenda? 
-            Provide a brief analysis and state if there are any off-topic discussions.
-            """
+            messages_text = "\n".join([
+                f"{msg.sender_id}: {msg.content}" 
+                for msg in chat.messages[-25:]
+            ])
 
-            response = self.llm.invoke(
-                model="gpt-3.5-turbo",
-                messages=[
-                    {"role": "system", "content": "You are a context validation assistant."},
-                    {"role": "user", "content": prompt}
-                ]
+            prompt = PromptTemplate(
+                input_variables=["chat_name", "agenda", "messages"],
+                template="""
+                Analyze if the following chat messages align with the chat agenda.
+
+                Chat Name: {chat_name}
+                Chat Agenda: {agenda}
+
+                Recent Messages:
+                {messages}
+
+                Respond in the following format:
+                1. Is_On_Topic: [Yes/No]
+                2. Confidence: [percentage]
+                3. Analysis: [brief explanation]
+                4. Off_Topic_Examples: [list specific messages if any]
+                """
             )
 
-            return True, response.choices[0].message.content
+            formatted_prompt = prompt.format(
+                chat_name=chat.chat_name,
+                agenda=chat.agenda,
+                messages=messages_text
+            )
+
+            response = self.llm.invoke(formatted_prompt)
+
+            print("Printing LLM response")
+            print(response)
+            
+            # Parse LLM response for Yes/No
+            is_on_topic = 'yes' in response.lower().split('is_on_topic:')[1].split('\n')[0].lower()
+
+            return {
+                "is_on_topic": is_on_topic,
+                "validation_details": response,
+                "chat_name": chat.chat_name,
+                "message_count": len(chat.messages),
+                "agenda": chat.agenda
+            }, "Context validation complete"
 
         except Exception as e:
-            return False, f"Error validating chat context: {str(e)}"
+            traceback.print_tb(e.__traceback__)
+            logging.error(f"Error validating chat context: {str(e)}")
+            return None, f"Error validating chat context: {str(e)}"

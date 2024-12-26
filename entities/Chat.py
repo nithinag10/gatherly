@@ -6,5 +6,7 @@ from .Message import Message
 class Chat:
     id: str
     admin_id: str
+    chat_name : str
+    agenda : str
     participants: List[str] = field(default_factory=list)
     messages: List[Message] = field(default_factory=list) 

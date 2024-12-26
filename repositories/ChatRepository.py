@@ -42,6 +42,8 @@ class ChatRepository:
             return Chat(
                 id=chat_data.id,
                 admin_id=chat_data.admin_id,
+                chat_name=chat_data.chat_name,
+                agenda=chat_data.agenda,
                 participants=participants,
                 messages=messages
             )

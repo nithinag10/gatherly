@@ -12,7 +12,7 @@ class UserRepository:
                     {"user_id": user_id}
                 ).fetchone()
                 if user_data:
-                    return User(id=user_data.id, name=user_data.name)
+                    return User(id=user_data.id, name=user_data.name, email=user_data.email)
                 return None
         except Exception:
             raise
@@ -27,7 +27,6 @@ class UserRepository:
                 
                 if result is None:
                     return None
-                    
                 # Convert Row to dictionary using _mapping
                 return User(**result._mapping)
         except Exception:

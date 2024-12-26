@@ -4,6 +4,7 @@ from langchain_openai import OpenAI
 from langchain_core.prompts import PromptTemplate
 import os
 from dotenv import load_dotenv
+import traceback
 
 class SummaryService:
     def __init__(self, chat_repository: ChatRepository):
@@ -46,6 +47,10 @@ class SummaryService:
                 for msg in chat.messages
             ])
 
+            print("printing messaghes")
+            print(messages_text)
+            print(type(messages_text))
+
             # Create prompt template
             prompt = PromptTemplate(
                 input_variables=["messages"],
@@ -59,39 +64,15 @@ class SummaryService:
                 Chat messages:
                 {messages}
 
-                The given below is an example response. 
-                Please provide a structured summary in the following JSON format:
-                {
-                    "topic_of_discussion": "planning goa trip",
-                    "initiator": "Prajwal",
-                    "no_of_participants": "4",
-                    "closed_questions": [
-                        {
-                            "question": "Where are we staying in goa",
-                            "answer": "panaji hotel"
-                        },
-                        {
-                            "question": "Did someone book the hotel?",
-                            "answer": "Nithin is going to book tomorrow"
-                        }
-                    ],
-                    "under_discussion_questions": [
-                        {
-                            "question": "How many days are we staying there?",
-                            "answer": "Manoj is telling 5, Nithin is telling 3 but people are still thinking on it"
-                        }
-                    ],
-                    "open_questions": [
-                        {
-                            "question": "What is the budget of the trip?"
-                        }
-                    ]
-                }
+                Please provide a structured summary.
                 """
             )
 
             # Generate summary using LLM
             formatted_prompt = prompt.format(messages=messages_text)
+
+            print("Formated pronpt")
+            print(formatted_prompt)
             summary = self.llm.invoke(formatted_prompt)
 
             return {
@@ -102,4 +83,43 @@ class SummaryService:
             }, "Summary generated successfully"
 
         except Exception as e:
+            traceback.print_tb(e.__traceback__)
             return None, f"Error generating summary: {str(e)}"
+
+    def validate_chat_context(self, chat_id: str) -> Tuple[bool, str]:
+        """
+        Validate if chat messages align with the agenda
+        """
+        try:
+            # Get chat details
+            chat = self.chat_repository.get_chat_by_id(chat_id)
+            if not chat:
+                return False, "Chat not found"
+
+            # Get all messages
+            messages = [msg.content for msg in chat.messages]
+            if not messages:
+                return True, "No messages to validate"
+            
+            prompt = f"""
+            Chat Agenda: {chat.agenda}
+            
+            Recent messages in chat:
+            {' '.join(messages[-25:])}  # Only analyze last 25 messages
+            
+            Question: Are these messages staying within the context of the chat agenda? 
+            Provide a brief analysis and state if there are any off-topic discussions.
+            """
+
+            response = self.llm.invoke(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": "You are a context validation assistant."},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+
+            return True, response.choices[0].message.content
+
+        except Exception as e:
+            return False, f"Error validating chat context: {str(e)}"

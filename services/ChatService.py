@@ -117,7 +117,7 @@ class ChatService:
             return False, "Failed to send message"
             
         except Exception as e:
-            logger.error(f"Error in send_message: {str(e)}")
+            logging.error(f"Error in send_message: {str(e)}")
             raise
 
     def leave_chat(self, user_id: str, chat_id: str) -> Tuple[bool, str]:

@@ -32,8 +32,10 @@ class ChatRepository:
 
             messages = [
                 Message(
+                    id = row.id,
                     sender_id=row.sender_id,
                     content=row.content,
+                    timestamp=row.timestamp, # Assuming timestamp is a datetime object
                 ) for row in messages_data
             ]
 

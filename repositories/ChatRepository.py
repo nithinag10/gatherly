@@ -4,6 +4,7 @@ from entities.Chat import Chat
 from entities.Message import Message
 from sqlalchemy import text
 from storage.database import pool
+import logging
 
 class ChatRepository:
     def get_chat_by_id(self, chat_id: str) -> Optional[Chat]:
@@ -24,9 +25,13 @@ class ChatRepository:
             participants = [row.user_id for row in participants_data]
 
             messages_data = conn.execute(
-                text("""SELECT * FROM messages 
-                        WHERE chat_id = :chat_id 
-                        ORDER BY timestamp"""),
+                text("""
+                    SELECT m.id, m.sender_id, u.name AS sender_name, m.content, m.timestamp
+                    FROM messages m
+                    JOIN users u ON m.sender_id = u.id
+                    WHERE m.chat_id = :chat_id
+                    ORDER BY m.timestamp
+                """),
                 {"chat_id": chat_id}
             ).fetchall()
 
@@ -35,7 +40,8 @@ class ChatRepository:
                     id = row.id,
                     sender_id=row.sender_id,
                     content=row.content,
-                    timestamp=row.timestamp, # Assuming timestamp is a datetime object
+                    timestamp=row.timestamp,
+                    sender_name=row.sender_name
                 ) for row in messages_data
             ]
 
@@ -45,7 +51,8 @@ class ChatRepository:
                 chat_name=chat_data.chat_name,
                 agenda=chat_data.agenda,
                 participants=participants,
-                messages=messages
+                messages=messages,
+                created_at=chat_data.created_at
             )
 
     def save_chat(self, chat: Chat) -> Chat:
@@ -144,19 +151,23 @@ class ChatRepository:
             raise
 
     def get_user_chats(self, user_id: str) -> List[Chat]:
-        """Get all chats for a user"""
+        """Get all chats for a user ordered by creation time"""
         try:
             with pool.connect() as conn:
                 chats_data = conn.execute(
-                    text("""SELECT DISTINCT c.id 
-                            FROM chats c
-                            JOIN chat_participants cp ON c.id = cp.chat_id
-                            WHERE cp.user_id = :user_id"""),
+                    text("""
+                        SELECT c.* 
+                        FROM chats c
+                        JOIN chat_participants cp ON c.id = cp.chat_id
+                        WHERE cp.user_id = :user_id
+                        ORDER BY c.created_at DESC
+                    """),
                     {"user_id": user_id}
                 ).fetchall()
 
-            return [self.get_chat_by_id(chat.id) for chat in chats_data]
-        except Exception:
+                return [self.get_chat_by_id(chat.id) for chat in chats_data]
+        except Exception as e:
+            logging.error(f"Error getting user chats: {str(e)}")
             raise
 
     def remove_participant(self, chat_id: str, user_id: str) -> bool:

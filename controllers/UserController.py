@@ -28,14 +28,15 @@ def login():
     if not all(k in data for k in ('email', 'password')):
         return jsonify({"error": "Missing credentials"}), 400
 
-    token, message = auth_service.login(data['email'], data['password'])
+    token, message , user_id = auth_service.login(data['email'], data['password'])
     
     if not token:
         return jsonify({"error": message}), 401
         
     return jsonify({
         "token": token,
-        "message": message
+        "message": message,
+        "user_id": user_id
     }), 200
 
 @user_controller.route('/google/login')

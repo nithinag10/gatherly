@@ -33,7 +33,7 @@ class AuthService:
             return None, "Invalid credentials"
             
         token = create_token(user.id)
-        return token, "Login successful"
+        return token, "Login successful", user.id
 
     def get_google_auth_url(self) -> str:
         google_provider_cfg = requests.get(GOOGLE_DISCOVERY_URL).json()

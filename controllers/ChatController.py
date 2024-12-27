@@ -191,6 +191,7 @@ def get_messages(chat_id):
                 {
                     "id": msg.id,
                     "sender_id": msg.sender_id,
+                    "sender_name": msg.sender_name,
                     "content": msg.content,
                     "timestamp": msg.timestamp.isoformat()
                 } for msg in messages
@@ -282,3 +283,26 @@ def validate_chat_context(chat_id):
             "error": "Internal server error",
             "details": str(e)
         }), 500
+
+@chat_controller.route('/user/<user_id>/chats', methods=['GET'])
+def get_user_chats(user_id):
+    """Get all chats for a user"""
+    try:
+        chats = chat_repo.get_user_chats(user_id)
+
+        return jsonify({
+            "chats": [{
+                "id": chat.id,
+                "admin_id": chat.admin_id,
+                "chat_name": chat.chat_name,
+                "agenda": chat.agenda,
+                "created_at": chat.created_at.isoformat(),
+                "participant_count": len(chat.participants),
+                "last_message": chat.messages[-1].content if chat.messages else None
+            } for chat in chats]
+        }), 200
+
+    except Exception as e:
+        print("Stack trace: %s", traceback.format_exc())
+        logger.error(f"Error getting user chats: {str(e)}")
+        return jsonify({"error": str(e)}), 500

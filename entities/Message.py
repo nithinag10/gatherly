@@ -8,3 +8,4 @@ class Message:
     content: str
     id: Optional[str] = None
     timestamp: Optional[datetime] = None
+    sender_name: Optional[str] = None

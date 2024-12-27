@@ -206,7 +206,9 @@ def send_message(chat_id):
     try:
         data = request.get_json()
         
-        # Validate request data
+        # Add logging to debug duplicate calls
+        logger.debug(f"Received message request for chat {chat_id}: {data}")
+        
         if not data or 'user_id' not in data or 'content' not in data:
             return jsonify({
                 "error": "Missing required fields: user_id, content"
@@ -232,6 +234,7 @@ def send_message(chat_id):
         }), 201
 
     except Exception as e:
+        logger.error(f"Error sending message: {str(e)}")
         return jsonify({"error": str(e)}), 500 
 
 @chat_controller.route('/<chat_id>/summary', methods=['GET'])

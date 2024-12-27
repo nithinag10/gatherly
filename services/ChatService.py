@@ -4,7 +4,7 @@ from entities.User import User
 from entities.Message import Message
 from repositories.ChatRepository import ChatRepository
 from repositories.UserRepository import UserRepository
-import uuid
+import logging
 
 class ChatService:
     def __init__(self, chat_repository: ChatRepository, user_repository: UserRepository):
@@ -95,25 +95,30 @@ class ChatService:
         Returns:
             Tuple[bool, str]: (Success status, success/error message)
         """
-        # Verify chat exists
-        chat = self.chat_repository.get_chat_by_id(chat_id)
-        if not chat:
-            return False, "Chat not found"
+        try:
+            # Verify chat exists
+            chat = self.chat_repository.get_chat_by_id(chat_id)
+            if not chat:
+                return False, "Chat not found"
 
-        # Verify user is in chat using is_participant
-        if not self.chat_repository.is_participant(chat_id, user_id):
-            return False, "User is not a participant in this chat"
+            # Verify user is in chat using is_participant
+            if not self.chat_repository.is_participant(chat_id, user_id):
+                return False, "User is not a participant in this chat"
 
-        # Create and add message
-        message = Message(
-            sender_id=user_id,
-            content=content
-        )
-        
-        success = self.chat_repository.add_message(chat_id, message)
-        if success:
-            return True, "Message sent successfully"
-        return False, "Failed to send message"
+            # Create and add message
+            message = Message(
+                sender_id=user_id,
+                content=content
+            )
+            
+            success = self.chat_repository.add_message(chat_id, message)
+            if success:
+                return True, "Message sent successfully"
+            return False, "Failed to send message"
+            
+        except Exception as e:
+            logger.error(f"Error in send_message: {str(e)}")
+            raise
 
     def leave_chat(self, user_id: str, chat_id: str) -> Tuple[bool, str]:
         """

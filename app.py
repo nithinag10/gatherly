@@ -1,4 +1,5 @@
 from flask import Flask, jsonify
+from flask_cors import CORS
 from google.cloud.sql.connector import Connector, IPTypes
 import sqlalchemy
 import os
@@ -34,6 +35,15 @@ pool = sqlalchemy.create_engine(
 
 # Create Flask app
 app = Flask(__name__)
+
+# Configure CORS
+CORS(app, resources={
+    "*": {
+        "origins": ["http://localhost:3000"],
+        "methods": ["GET", "POST", "PUT", "DELETE"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
+})
 
 # Register the chat controller with the /api prefix
 app.register_blueprint(chat_controller, url_prefix='/api/chats')

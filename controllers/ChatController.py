@@ -211,16 +211,7 @@ def send_message(chat_id):
             return jsonify({
                 "error": "Missing required fields: user_id, content"
             }), 400
-        
-        # Create message with UUID
-        message_id = str(uuid.uuid4())
-        message = Message(
-            id=message_id,
-            sender_id=data['user_id'],
-            content=data['content'],
-            timestamp=datetime.now()
-        )
-        
+
         # Send message using service
         success, response_message = chat_service.send_message(
             data['user_id'], 
@@ -234,11 +225,9 @@ def send_message(chat_id):
         return jsonify({
             "message": response_message,
             "data": {
-                "message_id": message_id,
                 "chat_id": chat_id,
                 "sender_id": data['user_id'],
                 "content": data['content'],
-                "timestamp": message.timestamp.isoformat()
             }
         }), 201
 

@@ -32,10 +32,8 @@ class ChatRepository:
 
             messages = [
                 Message(
-                    id=row.id,
                     sender_id=row.sender_id,
                     content=row.content,
-                    timestamp=row.timestamp
                 ) for row in messages_data
             ]
 
@@ -118,10 +116,9 @@ class ChatRepository:
                     return False
 
                 conn.execute(
-                    text("""INSERT INTO messages (id, chat_id, sender_id, content, timestamp) 
-                            VALUES (:id, :chat_id, :sender_id, :content, :timestamp)"""),
-                    {"id": message.id, "chat_id": chat_id, "sender_id": message.sender_id, 
-                     "content": message.content, "timestamp": message.timestamp.isoformat()}
+                    text("""INSERT INTO messages (chat_id, sender_id, content) 
+                            VALUES (:chat_id, :sender_id, :content)"""),
+                    {"chat_id": chat_id, "sender_id": message.sender_id, "content": message.content}
                 )
             return True
         except Exception:

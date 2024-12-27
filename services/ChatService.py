@@ -90,7 +90,6 @@ class ChatService:
         
         Args:
             user_id (str): ID of the message sender
-            chat_id (str): ID of the chat
             content (str): Message content
             
         Returns:
@@ -107,7 +106,6 @@ class ChatService:
 
         # Create and add message
         message = Message(
-            id=str(uuid.uuid4()),  # Using UUID for message ID
             sender_id=user_id,
             content=content
         )

@@ -25,7 +25,7 @@ user_repo = UserRepository()
 chat_service = ChatService(chat_repo, user_repo)
 
 # Initialize SummaryService
-summary_service = SummaryService(chat_repo)
+summary_service = SummaryService(chat_repo, chat_service)
 
 @chat_controller.route('/health', methods=['GET'])
 def health_check():
@@ -206,31 +206,45 @@ def send_message(chat_id):
     """Send a message in a chat"""
     try:
         data = request.get_json()
-        
-        # Add logging to debug duplicate calls
-        logger.debug(f"Received message request for chat {chat_id}: {data}")
-        
         if not data or 'user_id' not in data or 'content' not in data:
             return jsonify({
                 "error": "Missing required fields: user_id, content"
             }), 400
 
-        # Send message using service
-        success, response_message = chat_service.send_message(
+        # Send message
+        success, message = chat_service.send_message(
             data['user_id'], 
             chat_id, 
             data['content']
         )
         
         if not success:
-            return jsonify({"error": response_message}), 400
+            return jsonify({"error": message}), 400
+
+        # Get current message count
+        chat = chat_repo.get_chat_by_id(chat_id)
+        if chat and len(chat.messages) % 10 == 0:  # Check every 10 messages
+            # Trigger context validation
+            validation_result, _ = summary_service.validate_chat_context(chat_id)
             
+            return jsonify({
+                "message": message,
+                "validation_triggered": True,
+                "validation_result": validation_result,
+                "data": {
+                    "chat_id": chat_id,
+                    "sender_id": data['user_id'],
+                    "content": data['content']
+                }
+            }), 201
+
         return jsonify({
-            "message": response_message,
+            "message": message,
+            "validation_triggered": False,
             "data": {
                 "chat_id": chat_id,
                 "sender_id": data['user_id'],
-                "content": data['content'],
+                "content": data['content']
             }
         }), 201
 

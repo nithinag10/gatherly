@@ -26,9 +26,6 @@ class AuthService:
     def login(self, email: str, password: str) -> Tuple[Optional[str], str]:
         user = self.user_repository.get_user_by_email(email)
 
-        print("Printing got user")
-        print(user)
-
         if not user or not verify_password(password, user.password_hash):
             return None, "Invalid credentials"
             

@@ -1,5 +1,6 @@
 from typing import Optional, Tuple, Dict
 from repositories.ChatRepository import ChatRepository
+from services.ChatService import ChatService
 from langchain_openai import OpenAI
 from langchain_core.prompts import PromptTemplate
 import os

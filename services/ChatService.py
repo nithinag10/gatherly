@@ -101,9 +101,9 @@ class ChatService:
             if not chat:
                 return False, "Chat not found"
 
-            # Verify user is in chat using is_participant
-            if not self.chat_repository.is_participant(chat_id, user_id):
-                return False, "User is not a participant in this chat"
+            # if not self.chat_repository.is_participant(chat_id, user_id):
+            #     # raise error
+            #     raise Exception("User is not a participant in this chat")
 
             # Create and add message
             message = Message(

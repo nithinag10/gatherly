@@ -39,7 +39,7 @@ app = Flask(__name__)
 # Configure CORS
 CORS(app, resources={
     "*": {
-        "origins": ["http://localhost:3000"],
+        "origins": ["http://localhost:3000", "https://getherly-frontend.vercel.app"],
         "methods": ["GET", "POST", "PUT", "DELETE"],
         "allow_headers": ["Content-Type", "Authorization"]
     }

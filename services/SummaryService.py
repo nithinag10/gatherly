@@ -48,26 +48,85 @@ class SummaryService:
 
             # Gather messages into text
             messages_text = "\n".join([
-                f"{msg.sender_id}: {msg.content}"
+                f"{msg.sender_name}: {msg.content}"
                 for msg in chat.messages
             ])
 
-            # Prepare an engaging and detailed prompt
+            # Prepare the detailed and structured prompt
             prompt = PromptTemplate(
                 input_variables=["messages"],
                 template="""
-    Analyze the following conversation and provide a structured summary in a clear and engaging manner. Your response should:
-    - Use simple, concise language
-    - Include emojis to make it visually appealing
-    - Break the output into short paragraphs or bullet points
+    You are an AI assistant that specializes in summarizing group discussions or chats. You have the following goal:
 
-    Focus on:
-    1️⃣ Main topics discussed
-    2️⃣ Key points or decisions made
-    3️⃣ Topics that were left unresolved or half-discussed (if any)
+    **Goal**: Produce a concise, well-structured, and engaging summary of the conversation that captures:
+    1. Chat overview (name, agenda, date/time).
+    2. Key topics and how much focus each received.
+    3. Who contributed which ideas or suggestions.
+    4. Any pending items or unresolved decisions.
+    5. Action items with assigned individuals and deadlines.
 
-    Avoid guessing or hallucinating details. If the conversation lacks enough information, clearly mention that.
+    Follow these instructions carefully:
 
+    1. **Read and Analyze Messages**:
+    - You will be given a list of messages. Each message has:
+        - A senders name.
+        - A timestamp.
+        - Text content (the message body).
+    - Treat these messages as if they were sent in chronological order.
+    - Identify repeated or related concepts to cluster them into “topics.”
+
+    2. **Identify Topics and Focus**:
+    - Look for distinct subjects or themes in the chat (e.g., destinations, budgeting, schedules, etc.).
+    - Estimate how much of the overall conversation was dedicated to each topic (for example, 50% on choosing a destination, 30% on budgeting, 20% on logistics).
+    - Provide a short status for each topic (e.g., “undecided,” “in progress,” “finalized,” etc.).
+
+    3. **Extract Contributors and Key Points**:
+    - For each topic, note which participants contributed ideas.
+    - Write down any unique or noteworthy suggestions (e.g., “Alice suggested Airbnb to cut costs,” “Bob wants a road trip to Coorg,” etc.).
+    - If a user proposes a solution or approach, highlight that contribution clearly.
+
+    4. **Pending & Next Steps**:
+    - Identify any discussion points that were not resolved or need follow-up (e.g., “Destination not decided yet,” “Budget needs final confirmation”).
+    - Summarize these in a short “Pending” or “Next Steps” section.
+
+    5. **Action Items**:
+    - Create a list of concrete tasks or to-dos.
+    - Clearly state **who** is responsible and **any deadlines** or timeframes.
+
+    6. **Formatting Requirements**:
+    - Use **headings** and **bullet points** where appropriate.
+    - Use **emojis** to make the summary more visually appealing (e.g., 📍 for location, 💸 for budget, ✅ for completed items, etc.).
+    - Maintain a **friendly and clear tone**—imagine you are providing a quick readout for the group so they can see what’s done, what’s pending, and who needs to act.
+
+    7. **Style & Tone**:
+    - Write in a **concise** manner: aim for a 200-400 word summary total (approx.).
+    - Keep the language **positive**, **helpful**, and **engaging**.
+    - If there’s any critical or urgent matter, use an appropriate emoji (e.g., ⚠️) or short note to highlight it.
+
+    8. **Example Structure** (for reference only; adapt as needed):
+
+    🌴 Friends' Trip Planning – Evening Chat 🌴 📅 Date/Time: ... 🎯 Agenda: ...
+
+    🔍 Key Topics & Focus
+
+    ...
+    ...
+    ...
+    👥 Contributors & Their Ideas
+
+    Alice: ...
+    Bob: ...
+    ⏳ Pending & Next Steps
+
+    ...
+    📋 Action Items
+
+    ...
+    ...
+    🎉 Wrap-Up
+    Feel free to adjust the emojis, headings, or bullet points to fit the conversation’s context.
+
+    **Input to Summarize**:
     Chat messages:
     {messages}
 
